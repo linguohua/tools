@@ -39,9 +39,9 @@ func (s *Server) codeAction(ctx context.Context, params *protocol.CodeActionPara
 		return nil, err
 	}
 	spn, err := m.RangeSpan(params.Range)
-	if err != nil {
-		return nil, err
-	}
+	//if err != nil {
+	return nil, err
+	//}
 
 	var codeActions []protocol.CodeAction
 

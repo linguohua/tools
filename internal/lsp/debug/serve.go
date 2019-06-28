@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"golang.org/x/tools/internal/lsp/telemetry"
+	"runtime/debug"
 	"golang.org/x/tools/internal/span"
 )
 
@@ -229,6 +230,7 @@ func Serve(ctx context.Context, addr string) error {
 		mux.HandleFunc("/file/", Render(fileTmpl, getFile))
 		mux.HandleFunc("/info", Render(infoTmpl, getInfo))
 		mux.HandleFunc("/memory", Render(memoryTmpl, getMemory))
+		mux.HandleFunc("/freeOSMemory", Render(infoTmpl, func(*http.Request) interface{} { debug.FreeOSMemory(); return "FreeOSMemory done!" }))
 		if err := http.Serve(listener, mux); err != nil {
 			log.Printf("Debug server failed with %v", err)
 			return
@@ -285,6 +287,7 @@ td.value {
 <a href="/">Main</a>
 <a href="/info">Info</a>
 <a href="/memory">Memory</a>
+<a href="/freeOSMemory">FreeOSMemory</a>
 <a href="/debug/">Debug</a>
 <hr>
 <h1>{{template "title" .}}</h1>

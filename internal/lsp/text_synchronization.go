@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
 	"golang.org/x/tools/internal/jsonrpc2"
 	"golang.org/x/tools/internal/lsp/protocol"
@@ -58,8 +59,16 @@ func (s *Server) didChange(ctx context.Context, params *protocol.DidChangeTextDo
 		}
 	}
 	// Cache the new file content and send fresh diagnostics.
+	return s.cacheAndDiagnose(ctx, uri, []byte(text))
+}
+
+func (s *Server) cacheAndDiagnose(ctx context.Context, uri span.URI, content []byte) error {
+    if strings.Contains(string(uri), "git:") {
+        return nil
+    }
+
 	view := s.session.ViewOf(uri)
-	if err := view.SetContent(ctx, uri, []byte(text)); err != nil {
+	if err := view.SetContent(ctx, uri, []byte(content)); err != nil {
 		return err
 	}
 	// Run diagnostics on the newly-changed file.

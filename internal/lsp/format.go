@@ -21,7 +21,7 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 	if err != nil {
 		return nil, err
 	}
-	edits, err := source.Format(ctx, f, rng)
+	edits, err := source.Imports(ctx, view, f, rng)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,8 @@
 package diff
 
 import "strings"
+//import "fmt"
+import "os"
 
 // Sources:
 // https://blog.jcoglan.com/2017/02/17/the-myers-diff-algorithm-part-3/
@@ -64,6 +66,96 @@ func ApplyEdits(a []string, operations []*Op) []string {
 	return b
 }
 
+func log2File(text string) {
+	f, err := os.OpenFile("C:\\stupid.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(text); err != nil {
+		panic(err)
+	}
+}
+
+// stringEqualIgnoreLF compare strings ignore the line feet different, \r\n, \n
+func stringEqualIgnoreLF(a,b string) bool {
+	la := len(a) - 1
+	lb := len(b) - 1
+	if la > 0 && a[la-1] == '\r' {
+		la = la -1
+	}
+
+	if lb > 0 && b[lb-1] == '\r' {
+		lb = lb -1
+	}
+
+	if la != lb {
+		return false
+	}
+
+	for i := 0; i < la; i++ {
+		if (a[i] != b[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func myOperations(a, b []string) []*Op {
+	M := len(a)
+	var i int
+	solution := make([]*Op, len(a)+len(b))
+
+	aIdx := 0
+	for bIdx, bContent := range b {
+		// if not the same, find out the same line of a
+		if ( aIdx < M && !stringEqualIgnoreLF(bContent,a[aIdx])) {
+			//log2File(fmt.Sprintf("bContent:%s\n", bContent))
+			//log2File(fmt.Sprintf("a[aIdx]:%s\n", a[aIdx]))
+			prv := aIdx
+
+			// find the same line from a
+			for ; aIdx < M; aIdx++ {
+				if stringEqualIgnoreLF(bContent,a[aIdx]) {
+					break
+				}
+			}
+
+			// delete [prv:aIdx] from a
+			op1 := &Op{}
+			op1.Kind = Delete
+			op1.I1 = prv
+			op1.I2 = aIdx
+
+			solution[i] = op1
+			i++
+
+			//log2File(fmt.Sprintf("Delete, I1:%d, I2:%d\n", prv, aIdx))
+		}
+
+		if (aIdx >= M) {
+			// insert all remain lines of b into a
+			op2 := &Op{}
+			op2.Kind = Insert
+			op2.I1 = bIdx
+			op2.I2 = bIdx
+			op2.J1 = bIdx
+			op2.Content = b[bIdx:]
+
+			solution[i] = op2
+			i++
+			//log2File(fmt.Sprintf("Insert, I1:%d, I2:%d, J1:%d,\n", bIdx, bIdx, bIdx))
+			break
+		}
+
+		aIdx++
+	}
+	return solution[:i]
+}
+
 // Operations returns the list of operations to convert a into b, consolidating
 // operations for multiple lines and not including equal lines.
 func Operations(a, b []string) []*Op {
@@ -82,7 +174,11 @@ func Operations(a, b []string) []*Op {
 		op.I2 = i2
 		if op.Kind == Insert {
 			op.Content = b[op.J1:j2]
+			//log2File(fmt.Sprintf("Insert, I1:%d, I2:%d, J1:%d, lines:%d\n", op.I1, op.I2, op.J1, len(op.Content)))
+		} else {
+			//log2File(fmt.Sprintf("Delete, I1:%d, I2:%d\n", op.I1, op.I2))
 		}
+
 		solution[i] = op
 		i++
 	}
@@ -191,7 +287,7 @@ func shortestEditSequence(a, b []string) ([][]int, int) {
 			y := x - k
 
 			// Diagonal moves while we have equal contents.
-			for x < M && y < N && a[x] == b[y] {
+			for x < M && y < N && stringEqualIgnoreLF(a[x], b[y]) {
 				x++
 				y++
 			}
